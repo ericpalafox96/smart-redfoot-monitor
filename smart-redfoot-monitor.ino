@@ -56,46 +56,92 @@ String buildDashboard() {
   String html = "";
 
   html += "<!DOCTYPE html><html><head>";
+  html += "<meta charset='UTF-8'>";
   html += "<meta name='viewport' content='width=device-width, initial-scale=1'>";
-  html += "<meta http-equiv='refresh' content='5'>";
   html += "<title>Rafa's Redfoot Monitor</title>";
 
   html += "<style>";
-  html += "body{font-family:Arial;background:#111;color:white;text-align:center;margin:0;padding:20px;}";
-  html += "h1{font-size:26px;margin-bottom:20px;}";
-  html += ".card{background:#222;border-radius:16px;padding:20px;margin:15px auto;max-width:350px;box-shadow:0 4px 12px #000;}";
-  html += ".label{font-size:18px;color:#aaa;}";
-  html += ".value{font-size:42px;font-weight:bold;margin-top:8px;}";
-  html += ".small{font-size:18px;color:#aaa;margin-top:20px;}";
+  html += "body{font-family:Arial;background:linear-gradient(180deg,#0f1f14,#111);color:white;text-align:center;margin:0;padding:20px;}";
+  html += "h1{font-size:26px;margin-bottom:5px;}";
+  html += ".subtitle{color:#aaa;margin-bottom:20px;}";
+  html += ".card{background:#222;border-radius:18px;padding:20px;margin:15px auto;max-width:360px;box-shadow:0 4px 14px #000;}";
+  html += ".label{font-size:18px;color:#bbb;}";
+  html += ".value{font-size:44px;font-weight:bold;margin-top:8px;}";
+  html += ".badge{display:inline-block;margin-top:10px;padding:6px 14px;border-radius:20px;font-weight:bold;font-size:14px;}";
+  html += ".ok{background:#1b5e20;color:#b9f6ca;}";
+  html += ".warn{background:#e65100;color:#ffe0b2;}";
+  html += ".bad{background:#7f0000;color:#ffcdd2;}";
+  html += ".small{font-size:16px;color:#aaa;margin-top:18px;}";
   html += "</style>";
 
   html += "</head><body>";
-  html += "<meta charset='UTF-8'>";
+
   html += "<h1>🐢 Rafa's Redfoot Monitor</h1>";
+  html += "<div class='subtitle'>Live Habitat Dashboard</div>";
 
   html += "<div class='card'>";
-  html += "<div class='label'>Air Temperature</div>";
-  html += "<div class='value'>" + String(airF, 1) + "&deg;F</div>";
+  html += "<div class='label'>🌡 Air Temperature</div>";
+  html += "<div class='value'><span id='air'>--</span>&deg;F</div>";
+  html += "<div id='airStatus' class='badge'>--</div>";
   html += "</div>";
 
   html += "<div class='card'>";
-  html += "<div class='label'>Humidity</div>";
-  html += "<div class='value'>" + String(humidity, 0) + "%</div>";
+  html += "<div class='label'>💧 Humidity</div>";
+  html += "<div class='value'><span id='humidity'>--</span>%</div>";
+  html += "<div id='humStatus' class='badge'>--</div>";
   html += "</div>";
 
   html += "<div class='card'>";
-  html += "<div class='label'>Spot Temperature</div>";
-
-  if (spotF < -100) {
-    html += "<div class='value'>ERR</div>";
-  } else {
-    html += "<div class='value'>" + String(spotF, 1) + "&deg;F</div>";
-  }
-
+  html += "<div class='label'>☀️ Spot Temperature</div>";
+  html += "<div class='value'><span id='spot'>--</span></div>";
+  html += "<div id='spotStatus' class='badge'>--</div>";
   html += "</div>";
 
-  html += "<div class='small'>Updated: " + timeString + "</div>";
-  html += "<div class='small'>Auto-refreshes every 5 seconds</div>";
+  html += "<div class='small'>Last Updated: <span id='time'>--</span></div>";
+  html += "<div class='small'>Updates every 1 second</div>";
+
+  html += "<script>";
+
+  html += "function setBadge(id,text,cls){";
+  html += "let e=document.getElementById(id);";
+  html += "e.textContent=text;";
+  html += "e.className='badge '+cls;";
+  html += "}";
+
+  html += "async function updateData(){";
+  html += "try{";
+  html += "const r=await fetch('/data');";
+  html += "const d=await r.json();";
+
+  html += "document.getElementById('air').textContent=d.air_f.toFixed(1);";
+  html += "document.getElementById('humidity').textContent=d.humidity.toFixed(0);";
+
+  html += "if(d.spot_f < -100){";
+  html += "document.getElementById('spot').textContent='ERR';";
+  html += "setBadge('spotStatus','SENSOR ERROR','bad');";
+  html += "}else{";
+  html += "document.getElementById('spot').textContent=d.spot_f.toFixed(1)+'°F';";
+  html += "if(d.spot_f < 85)setBadge('spotStatus','LOW','warn');";
+  html += "else if(d.spot_f > 95)setBadge('spotStatus','HIGH','bad');";
+  html += "else setBadge('spotStatus','OK','ok');";
+  html += "}";
+
+  html += "if(d.air_f < 75)setBadge('airStatus','LOW','warn');";
+  html += "else if(d.air_f > 88)setBadge('airStatus','HIGH','bad');";
+  html += "else setBadge('airStatus','OK','ok');";
+
+  html += "if(d.humidity < 70)setBadge('humStatus','LOW','bad');";
+  html += "else if(d.humidity > 90)setBadge('humStatus','HIGH','warn');";
+  html += "else setBadge('humStatus','OK','ok');";
+
+  html += "document.getElementById('time').textContent=d.time;";
+  html += "}catch(e){console.log(e);}";
+  html += "}";
+
+  html += "updateData();";
+  html += "setInterval(updateData,1000);";
+
+  html += "</script>";
 
   html += "</body></html>";
 
